@@ -29,9 +29,14 @@ export default async function DashboardPage() {
           <p className="text-xl font-bold text-slate-800">
             Dashboard <span className="text-sky-600">Simulasi</span>
           </p>
-          <Link href="/" className="text-sm font-medium text-sky-600 hover:underline">
-            ← Kembali ke Beranda
-          </Link>
+          <nav className="flex gap-5 text-sm font-medium text-sky-600">
+            <Link href="/riwayat" className="hover:underline">
+              Riwayat Harian
+            </Link>
+            <Link href="/" className="hover:underline">
+              Beranda
+            </Link>
+          </nav>
         </div>
       </header>
 

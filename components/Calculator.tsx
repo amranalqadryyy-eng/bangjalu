@@ -35,7 +35,7 @@ export default function Calculator() {
   const [nama, setNama] = useState('')
   const [rateAvalist1, setRateAvalist1] = useState<number>(AVALIST1_RATES[0])
   const [namaMarketing, setNamaMarketing] = useState('')
-  const [rateMarketing, setRateMarketing] = useState<number>(AVALIST2_RATES[0])
+  const [rateMarketing, setRateMarketing] = useState<number>(0) // 0 = tidak ada Avalist 2
   const [nominalStr, setNominalStr] = useState('10.000.000')
   const [tanggal, setTanggal] = useState(() => new Date().toISOString().slice(0, 10))
   const [hasil, setHasil] = useState<Hasil | null>(null)
@@ -55,8 +55,8 @@ export default function Calculator() {
       setError('Mohon isi nama investor.')
       return false
     }
-    if (!namaMarketing.trim()) {
-      setError('Mohon isi nama Avalist 2.')
+    if (rateMarketing > 0 && !namaMarketing.trim()) {
+      setError('Mohon isi nama Avalist 2 (atau pilih "Tidak Ada").')
       return false
     }
     if (nominal < MIN_INVESTASI) {
@@ -78,9 +78,9 @@ export default function Calculator() {
       tenorBulan: TENOR_BULAN,
       rateAvalist1,
       avalist1Bulanan: Math.round(nominal * rateAvalist1),
-      namaMarketing: namaMarketing.trim(),
+      namaMarketing: rateMarketing > 0 ? namaMarketing.trim() : '',
       rateMarketing,
-      komisiBulanan: Math.round(nominal * rateMarketing),
+      komisiBulanan: rateMarketing > 0 ? Math.round(nominal * rateMarketing) : 0,
     })
   }
 
@@ -97,7 +97,7 @@ export default function Calculator() {
           nominal,
           tanggalMulai: tanggal,
           rateAvalist1,
-          namaMarketing: namaMarketing.trim(),
+          namaMarketing: rateMarketing > 0 ? namaMarketing.trim() : '',
           rateMarketing,
         }),
       })
@@ -175,25 +175,27 @@ export default function Calculator() {
           ))}
         </div>
 
-        <label className="mb-2 block text-sm font-semibold text-slate-700">Nama Avalist 2</label>
-        <input
-          type="text"
-          value={namaMarketing}
-          onChange={(e) => setNamaMarketing(e.target.value)}
-          placeholder="Nama Avalist 2"
-          className="mb-5 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-        />
-
         <label className="mb-2 block text-sm font-semibold text-slate-700">
-          Bagi Hasil Avalist 2
+          Bagi Hasil Avalist 2 (opsional)
         </label>
-        <div className="mb-5 grid grid-cols-2 gap-3">
+        <div className="mb-5 grid grid-cols-3 gap-3">
+          <button
+            type="button"
+            onClick={() => setRateMarketing(0)}
+            className={`rounded-xl border px-3 py-3 text-sm font-semibold transition ${
+              rateMarketing === 0
+                ? 'border-sky-500 bg-sky-50 text-sky-700 ring-2 ring-sky-100'
+                : 'border-slate-200 text-slate-600 hover:border-sky-300'
+            }`}
+          >
+            Tidak Ada
+          </button>
           {AVALIST2_RATES.map((rate) => (
             <button
               key={rate}
               type="button"
               onClick={() => setRateMarketing(rate)}
-              className={`rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+              className={`rounded-xl border px-3 py-3 text-sm font-semibold transition ${
                 rateMarketing === rate
                   ? 'border-sky-500 bg-sky-50 text-sky-700 ring-2 ring-sky-100'
                   : 'border-slate-200 text-slate-600 hover:border-sky-300'
@@ -203,6 +205,21 @@ export default function Calculator() {
             </button>
           ))}
         </div>
+
+        {rateMarketing > 0 && (
+          <>
+            <label className="mb-2 block text-sm font-semibold text-slate-700">
+              Nama Avalist 2
+            </label>
+            <input
+              type="text"
+              value={namaMarketing}
+              onChange={(e) => setNamaMarketing(e.target.value)}
+              placeholder="Nama Avalist 2"
+              className="mb-5 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+            />
+          </>
+        )}
 
         <label className="mb-2 block text-sm font-semibold text-slate-700">
           Tanggal Mulai Kontrak
@@ -271,12 +288,21 @@ export default function Calculator() {
                 </p>
               </div>
               <div className="rounded-xl bg-slate-800 p-4">
-                <p className="text-slate-400">
-                  Avalist 2 — {hasil.namaMarketing} ({formatPersen(hasil.rateMarketing)})
-                </p>
-                <p className="mt-1 text-lg font-bold text-amber-400">
-                  {formatRupiah(hasil.komisiBulanan)}
-                </p>
+                {hasil.rateMarketing > 0 ? (
+                  <>
+                    <p className="text-slate-400">
+                      Avalist 2 — {hasil.namaMarketing} ({formatPersen(hasil.rateMarketing)})
+                    </p>
+                    <p className="mt-1 text-lg font-bold text-amber-400">
+                      {formatRupiah(hasil.komisiBulanan)}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-slate-400">Avalist 2</p>
+                    <p className="mt-1 text-lg font-bold text-slate-500">Tidak ada</p>
+                  </>
+                )}
               </div>
             </div>
 

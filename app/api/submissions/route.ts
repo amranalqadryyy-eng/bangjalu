@@ -15,7 +15,8 @@ export async function POST(req: Request) {
   const tanggalMulai = new Date(body?.tanggalMulai)
   const rateAvalist1 = Number(body?.rateAvalist1)
   const namaMarketing = typeof body?.namaMarketing === 'string' ? body.namaMarketing.trim() : ''
-  const rateMarketing = Number(body?.rateMarketing)
+  const rateMarketing = Number(body?.rateMarketing) || 0
+  const pakaiAvalist2 = rateMarketing > 0
 
   if (!nama) {
     return NextResponse.json({ error: 'Nama wajib diisi' }, { status: 400 })
@@ -23,11 +24,11 @@ export async function POST(req: Request) {
   if (!AVALIST1_RATES.includes(rateAvalist1 as (typeof AVALIST1_RATES)[number])) {
     return NextResponse.json({ error: 'Pilihan Avalist 1 tidak valid' }, { status: 400 })
   }
-  if (!namaMarketing) {
-    return NextResponse.json({ error: 'Nama Avalist 2 wajib diisi' }, { status: 400 })
-  }
-  if (!AVALIST2_RATES.includes(rateMarketing as (typeof AVALIST2_RATES)[number])) {
+  if (pakaiAvalist2 && !AVALIST2_RATES.includes(rateMarketing as (typeof AVALIST2_RATES)[number])) {
     return NextResponse.json({ error: 'Pilihan Avalist 2 tidak valid' }, { status: 400 })
+  }
+  if (pakaiAvalist2 && !namaMarketing) {
+    return NextResponse.json({ error: 'Nama Avalist 2 wajib diisi' }, { status: 400 })
   }
   if (!Number.isFinite(nominal) || nominal < MIN_INVESTASI) {
     return NextResponse.json(
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
   const hasilBulanan = Math.round(nominal * RATE_BULANAN)
   const totalHasil = hasilBulanan * TENOR_BULAN
   const avalist1Bulanan = Math.round(nominal * rateAvalist1)
-  const komisiBulanan = Math.round(nominal * rateMarketing)
+  const komisiBulanan = pakaiAvalist2 ? Math.round(nominal * rateMarketing) : 0
 
   const submission = await prisma.submission.create({
     data: {
@@ -55,8 +56,8 @@ export async function POST(req: Request) {
       totalHasil: BigInt(totalHasil),
       rateAvalist1,
       avalist1Bulanan: BigInt(avalist1Bulanan),
-      namaMarketing,
-      rateMarketing,
+      namaMarketing: pakaiAvalist2 ? namaMarketing : '',
+      rateMarketing: pakaiAvalist2 ? rateMarketing : 0,
       komisiBulanan: BigInt(komisiBulanan),
     },
   })
