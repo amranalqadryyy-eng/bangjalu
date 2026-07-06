@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Submission {
+  id            String   @id @default(cuid())
+  nama          String
+  nominal       BigInt
+  tanggalMulai  DateTime
+  rateBulanan   Float
+  tenorBulan    Int
+  hasilBulanan  BigInt
+  totalHasil    BigInt
+  namaMarketing String   @default("")
+  rateMarketing Float    @default(0)
+  komisiBulanan BigInt   @default(0)
+  klikWa        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+}
