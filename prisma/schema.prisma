@@ -16,6 +16,10 @@ model Submission {
   tenorBulan    Int
   hasilBulanan  BigInt
   totalHasil    BigInt
+  // Avalist 1 (tanpa nama)
+  rateAvalist1    Float  @default(0)
+  avalist1Bulanan BigInt @default(0)
+  // Avalist 2 (pakai nama) — kolom lama "marketing" dipakai sebagai avalist 2
   namaMarketing String   @default("")
   rateMarketing Float    @default(0)
   komisiBulanan BigInt   @default(0)

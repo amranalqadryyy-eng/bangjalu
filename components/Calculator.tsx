@@ -2,11 +2,17 @@
 
 import { useState } from 'react'
 import {
+  AVALIST1_RATES,
+  AVALIST2_RATES,
   buildWaLink,
+  formatPersen,
   formatRupiah,
-  KOMISI_MARKETING,
+  formatTanggal,
+  HARI_BERLAKU,
   MIN_INVESTASI,
   RATE_BULANAN,
+  tambahBulan,
+  tambahHari,
   TENOR_BULAN,
 } from '@/lib/config'
 
@@ -16,6 +22,8 @@ type Hasil = {
   totalHasil: number
   rateBulanan: number
   tenorBulan: number
+  rateAvalist1: number
+  avalist1Bulanan: number
   namaMarketing: string
   rateMarketing: number
   komisiBulanan: number
@@ -23,8 +31,9 @@ type Hasil = {
 
 export default function Calculator() {
   const [nama, setNama] = useState('')
+  const [rateAvalist1, setRateAvalist1] = useState<number>(AVALIST1_RATES[0])
   const [namaMarketing, setNamaMarketing] = useState('')
-  const [rateMarketing, setRateMarketing] = useState<number>(KOMISI_MARKETING[0])
+  const [rateMarketing, setRateMarketing] = useState<number>(AVALIST2_RATES[0])
   const [nominalStr, setNominalStr] = useState('10.000.000')
   const [tanggal, setTanggal] = useState(() => new Date().toISOString().slice(0, 10))
   const [hasil, setHasil] = useState<Hasil | null>(null)
@@ -41,11 +50,11 @@ export default function Calculator() {
   async function hitung() {
     setError('')
     if (!nama.trim()) {
-      setError('Mohon isi nama Anda.')
+      setError('Mohon isi nama investor.')
       return
     }
     if (!namaMarketing.trim()) {
-      setError('Mohon isi nama marketing/pembawa investor.')
+      setError('Mohon isi nama Avalist 2.')
       return
     }
     if (nominal < MIN_INVESTASI) {
@@ -61,6 +70,7 @@ export default function Calculator() {
           nama: nama.trim(),
           nominal,
           tanggalMulai: tanggal,
+          rateAvalist1,
           namaMarketing: namaMarketing.trim(),
           rateMarketing,
         }),
@@ -78,11 +88,12 @@ export default function Calculator() {
     }
   }
 
-  const tanggalSelesai = (() => {
-    const d = new Date(tanggal)
-    d.setMonth(d.getMonth() + TENOR_BULAN)
-    return d
-  })()
+  // Tanggal-tanggal turunan
+  const tglHariIni = new Date()
+  const tglSepuluh = tambahHari(tglHariIni, HARI_BERLAKU)
+  const tglMulai = new Date(tanggal)
+  const bagiHasilPertama = tambahBulan(tglMulai, 1)
+  const bagiHasilTerakhir = tambahBulan(tglMulai, TENOR_BULAN)
 
   return (
     <div className="mx-auto grid max-w-5xl overflow-hidden rounded-3xl bg-white shadow-xl md:grid-cols-2">
@@ -95,7 +106,7 @@ export default function Calculator() {
           <h2 className="text-xl font-bold text-slate-800">Input Investasi</h2>
         </div>
 
-        <label className="mb-2 block text-sm font-semibold text-slate-700">Nama Anda</label>
+        <label className="mb-2 block text-sm font-semibold text-slate-700">Nama Investor</label>
         <input
           type="text"
           value={nama}
@@ -119,21 +130,41 @@ export default function Calculator() {
         </div>
 
         <label className="mb-2 block text-sm font-semibold text-slate-700">
-          Nama Marketing / Pembawa Investor
+          Bagi Hasil Avalist 1
+        </label>
+        <div className="mb-5 grid grid-cols-2 gap-3">
+          {AVALIST1_RATES.map((rate) => (
+            <button
+              key={rate}
+              type="button"
+              onClick={() => setRateAvalist1(rate)}
+              className={`rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+                rateAvalist1 === rate
+                  ? 'border-sky-500 bg-sky-50 text-sky-700 ring-2 ring-sky-100'
+                  : 'border-slate-200 text-slate-600 hover:border-sky-300'
+              }`}
+            >
+              {formatPersen(rate)} per bulan
+            </button>
+          ))}
+        </div>
+
+        <label className="mb-2 block text-sm font-semibold text-slate-700">
+          Nama Avalist 2
         </label>
         <input
           type="text"
           value={namaMarketing}
           onChange={(e) => setNamaMarketing(e.target.value)}
-          placeholder="Nama Marketing"
+          placeholder="Nama Avalist 2"
           className="mb-5 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
         />
 
         <label className="mb-2 block text-sm font-semibold text-slate-700">
-          Bagi Hasil Marketing
+          Bagi Hasil Avalist 2
         </label>
         <div className="mb-5 grid grid-cols-2 gap-3">
-          {KOMISI_MARKETING.map((rate) => (
+          {AVALIST2_RATES.map((rate) => (
             <button
               key={rate}
               type="button"
@@ -144,7 +175,7 @@ export default function Calculator() {
                   : 'border-slate-200 text-slate-600 hover:border-sky-300'
               }`}
             >
-              {(rate * 100).toLocaleString('id-ID')}% per bulan
+              {formatPersen(rate)} per bulan
             </button>
           ))}
         </div>
@@ -193,54 +224,73 @@ export default function Calculator() {
             </p>
 
             <div className="rounded-2xl bg-slate-800 p-5">
-              <p className="text-sm text-slate-400">Estimasi Bagi Hasil per Bulan</p>
+              <p className="text-sm text-slate-400">
+                Bagi Hasil Investor per Bulan ({formatPersen(hasil.rateBulanan)})
+              </p>
               <p className="mt-1 text-3xl font-bold text-emerald-400">
                 {formatRupiah(hasil.hasilBulanan)}
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                Setara {(hasil.rateBulanan * 100).toFixed(1)}% per bulan
               </p>
             </div>
 
             <div className="rounded-2xl bg-slate-800 p-5">
-              <p className="text-sm text-slate-400">
-                Total Akumulasi {hasil.tenorBulan} Bulan
-              </p>
+              <p className="text-sm text-slate-400">Total Akumulasi {hasil.tenorBulan} Bulan</p>
               <p className="mt-1 text-3xl font-bold text-sky-400">
                 {formatRupiah(hasil.totalHasil)}
               </p>
             </div>
 
-            <div className="rounded-2xl bg-slate-800 p-5">
-              <p className="text-sm text-slate-400">
-                Bagi Hasil Marketing — {hasil.namaMarketing} (
-                {(hasil.rateMarketing * 100).toLocaleString('id-ID')}%/bulan)
-              </p>
-              <p className="mt-1 text-2xl font-bold text-amber-400">
-                {formatRupiah(hasil.komisiBulanan)}
-                <span className="text-sm font-normal text-slate-500"> /bulan</span>
-              </p>
+            {/* Avalist */}
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="rounded-xl bg-slate-800 p-4">
+                <p className="text-slate-400">Avalist 1 ({formatPersen(hasil.rateAvalist1)}/bln)</p>
+                <p className="mt-1 text-lg font-bold text-amber-400">
+                  {formatRupiah(hasil.avalist1Bulanan)}
+                </p>
+              </div>
+              <div className="rounded-xl bg-slate-800 p-4">
+                <p className="text-slate-400">
+                  Avalist 2 — {hasil.namaMarketing} ({formatPersen(hasil.rateMarketing)}/bln)
+                </p>
+                <p className="mt-1 text-lg font-bold text-amber-400">
+                  {formatRupiah(hasil.komisiBulanan)}
+                </p>
+              </div>
             </div>
 
+            {/* Tanggal-tanggal */}
             <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="rounded-xl bg-slate-800 p-4">
+                <p className="text-slate-400">Tanggal Hari Ini</p>
+                <p className="mt-1 font-semibold">{formatTanggal(tglHariIni)}</p>
+              </div>
+              <div className="rounded-xl bg-slate-800 p-4">
+                <p className="text-slate-400">Berlaku {HARI_BERLAKU} Hari (s/d)</p>
+                <p className="mt-1 font-semibold">{formatTanggal(tglSepuluh)}</p>
+              </div>
               <div className="rounded-xl bg-slate-800 p-4">
                 <p className="text-slate-400">Modal Investasi</p>
                 <p className="mt-1 font-semibold">{formatRupiah(nominal)}</p>
               </div>
               <div className="rounded-xl bg-slate-800 p-4">
-                <p className="text-slate-400">Kontrak Berakhir</p>
-                <p className="mt-1 font-semibold">
-                  {tanggalSelesai.toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
+                <p className="text-slate-400">Mulai Kontrak</p>
+                <p className="mt-1 font-semibold">{formatTanggal(tglMulai)}</p>
+              </div>
+              <div className="rounded-xl bg-slate-800 p-4">
+                <p className="text-slate-400">Bagi Hasil Pertama</p>
+                <p className="mt-1 font-semibold text-emerald-300">
+                  {formatTanggal(bagiHasilPertama)}
+                </p>
+              </div>
+              <div className="rounded-xl bg-slate-800 p-4">
+                <p className="text-slate-400">Bagi Hasil Terakhir</p>
+                <p className="mt-1 font-semibold text-emerald-300">
+                  {formatTanggal(bagiHasilTerakhir)}
                 </p>
               </div>
             </div>
 
             <a
-              href={buildWaLink(nama.trim(), nominal, new Date(tanggal))}
+              href={buildWaLink(nama.trim(), nominal, tglMulai)}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => {
@@ -255,8 +305,8 @@ export default function Calculator() {
             </a>
 
             <p className="text-xs leading-relaxed text-slate-500">
-              *Estimasi menggunakan asumsi bagi hasil {(RATE_BULANAN * 100).toFixed(1)}% per
-              bulan. Hasil aktual mengikuti akad dan kinerja usaha.
+              *Estimasi bagi hasil investor {formatPersen(RATE_BULANAN)} per bulan. Hasil aktual
+              mengikuti akad dan kinerja usaha.
             </p>
           </div>
         )}
