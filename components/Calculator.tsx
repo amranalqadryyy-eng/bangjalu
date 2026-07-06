@@ -144,7 +144,7 @@ export default function Calculator() {
                   : 'border-slate-200 text-slate-600 hover:border-sky-300'
               }`}
             >
-              {formatPersen(rate)} per bulan
+              {formatPersen(rate)}
             </button>
           ))}
         </div>
@@ -175,7 +175,7 @@ export default function Calculator() {
                   : 'border-slate-200 text-slate-600 hover:border-sky-300'
               }`}
             >
-              {formatPersen(rate)} per bulan
+              {formatPersen(rate)}
             </button>
           ))}
         </div>
@@ -225,7 +225,7 @@ export default function Calculator() {
 
             <div className="rounded-2xl bg-slate-800 p-5">
               <p className="text-sm text-slate-400">
-                Bagi Hasil Investor per Bulan ({formatPersen(hasil.rateBulanan)})
+                Bagi Hasil Investor ({formatPersen(hasil.rateBulanan)})
               </p>
               <p className="mt-1 text-3xl font-bold text-emerald-400">
                 {formatRupiah(hasil.hasilBulanan)}
@@ -242,14 +242,14 @@ export default function Calculator() {
             {/* Avalist */}
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="rounded-xl bg-slate-800 p-4">
-                <p className="text-slate-400">Avalist 1 ({formatPersen(hasil.rateAvalist1)}/bln)</p>
+                <p className="text-slate-400">Avalist 1 ({formatPersen(hasil.rateAvalist1)})</p>
                 <p className="mt-1 text-lg font-bold text-amber-400">
                   {formatRupiah(hasil.avalist1Bulanan)}
                 </p>
               </div>
               <div className="rounded-xl bg-slate-800 p-4">
                 <p className="text-slate-400">
-                  Avalist 2 — {hasil.namaMarketing} ({formatPersen(hasil.rateMarketing)}/bln)
+                  Avalist 2 — {hasil.namaMarketing} ({formatPersen(hasil.rateMarketing)})
                 </p>
                 <p className="mt-1 text-lg font-bold text-amber-400">
                   {formatRupiah(hasil.komisiBulanan)}
@@ -305,8 +305,8 @@ export default function Calculator() {
             </a>
 
             <p className="text-xs leading-relaxed text-slate-500">
-              *Estimasi bagi hasil investor {formatPersen(RATE_BULANAN)} per bulan. Hasil aktual
-              mengikuti akad dan kinerja usaha.
+              *Estimasi bagi hasil investor {formatPersen(RATE_BULANAN)}. Hasil aktual mengikuti
+              akad dan kinerja usaha.
             </p>
           </div>
         )}

@@ -52,7 +52,7 @@ export default async function DashboardPage() {
             <p className="mt-2 text-3xl font-bold text-sky-600">{formatRupiah(totalNominal)}</p>
           </div>
           <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <p className="text-sm text-slate-500">Total Bagi Hasil Investor / Bulan</p>
+            <p className="text-sm text-slate-500">Total Bagi Hasil Investor</p>
             <p className="mt-2 text-3xl font-bold text-emerald-600">
               {formatRupiah(totalHasilBulanan)}
             </p>
@@ -69,7 +69,7 @@ export default async function DashboardPage() {
                 <th className="px-4 py-4 font-semibold">Nominal</th>
                 <th className="px-4 py-4 font-semibold">Berlaku {HARI_BERLAKU} Hari</th>
                 <th className="px-4 py-4 font-semibold">Mulai Kontrak</th>
-                <th className="px-4 py-4 font-semibold">Investor/bln</th>
+                <th className="px-4 py-4 font-semibold">Bagi Hasil Investor</th>
                 <th className="px-4 py-4 font-semibold">Avalist 1</th>
                 <th className="px-4 py-4 font-semibold">Avalist 2</th>
                 <th className="px-4 py-4 font-semibold">B.Hasil Pertama</th>
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
                         <>
                           {formatPersen(s.rateAvalist1)}
                           <br />
-                          <span className="text-xs">{formatRupiah(Number(s.avalist1Bulanan))}/bln</span>
+                          <span className="text-xs">{formatRupiah(Number(s.avalist1Bulanan))}</span>
                         </>
                       ) : (
                         <span className="text-slate-400">—</span>
@@ -115,7 +115,7 @@ export default async function DashboardPage() {
                           <br />
                           <span className="text-xs text-amber-600">
                             {formatPersen(s.rateMarketing)} ={' '}
-                            {formatRupiah(Number(s.komisiBulanan))}/bln
+                            {formatRupiah(Number(s.komisiBulanan))}
                           </span>
                         </>
                       ) : (
