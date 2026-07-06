@@ -20,7 +20,6 @@ export default async function DashboardPage() {
 
   const totalNominal = submissions.reduce((sum, s) => sum + Number(s.nominal), 0)
   const totalHasilBulanan = submissions.reduce((sum, s) => sum + Number(s.hasilBulanan), 0)
-  const totalLeadWa = submissions.filter((s) => s.klikWa).length
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -38,14 +37,10 @@ export default async function DashboardPage() {
 
       <main className="mx-auto max-w-7xl px-6 py-10">
         {/* Ringkasan */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-3">
           <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <p className="text-sm text-slate-500">Total Simulasi Masuk</p>
+            <p className="text-sm text-slate-500">Total Data Masuk</p>
             <p className="mt-2 text-3xl font-bold text-slate-900">{submissions.length}</p>
-          </div>
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <p className="text-sm text-slate-500">Lead Klik WhatsApp</p>
-            <p className="mt-2 text-3xl font-bold text-emerald-600">{totalLeadWa}</p>
           </div>
           <div className="rounded-2xl bg-white p-6 shadow-sm">
             <p className="text-sm text-slate-500">Total Nominal Disimulasikan</p>
@@ -74,13 +69,12 @@ export default async function DashboardPage() {
                 <th className="px-4 py-4 font-semibold">Avalist 2</th>
                 <th className="px-4 py-4 font-semibold">B.Hasil Pertama</th>
                 <th className="px-4 py-4 font-semibold">B.Hasil Terakhir</th>
-                <th className="px-4 py-4 font-semibold">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {submissions.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-5 py-12 text-center italic text-slate-400">
+                  <td colSpan={10} className="px-5 py-12 text-center italic text-slate-400">
                     Belum ada data simulasi masuk.
                   </td>
                 </tr>
@@ -127,17 +121,6 @@ export default async function DashboardPage() {
                     </td>
                     <td className="px-4 py-4 text-slate-600">
                       {formatTanggal(tambahBulan(s.tanggalMulai, TENOR_BULAN))}
-                    </td>
-                    <td className="px-4 py-4">
-                      {s.klikWa ? (
-                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                          Klik WA
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
-                          Baru
-                        </span>
-                      )}
                     </td>
                   </tr>
                 ))
