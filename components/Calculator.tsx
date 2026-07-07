@@ -317,10 +317,6 @@ export default function Calculator() {
                 <p className="mt-1 font-semibold">{formatTanggal(tglSepuluh)}</p>
               </div>
               <div className="rounded-xl bg-slate-800 p-4">
-                <p className="text-slate-400">Modal Investasi</p>
-                <p className="mt-1 font-semibold">{formatRupiah(hasil.nominal)}</p>
-              </div>
-              <div className="rounded-xl bg-slate-800 p-4">
                 <p className="text-slate-400">Bagi Hasil Pertama</p>
                 <p className="mt-1 font-semibold text-emerald-300">
                   {formatTanggal(bagiHasilPertama)}
