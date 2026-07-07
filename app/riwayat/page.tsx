@@ -55,7 +55,7 @@ export default async function RiwayatPage() {
                   <h2 className="text-lg font-bold text-slate-900">
                     {formatTanggal(items[0].createdAt)}
                   </h2>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div className="mt-3 space-y-3">
                     <div className="rounded-xl bg-amber-50 p-3">
                       <p className="text-xs text-slate-500">Total Penerimaan Avalist 1</p>
                       <p className="mt-1 text-lg font-bold text-amber-600">
