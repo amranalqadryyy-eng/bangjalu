@@ -1,9 +1,14 @@
 import Link from 'next/link'
 import AutoRefresh from '@/components/AutoRefresh'
 import { prisma } from '@/lib/prisma'
-import { formatPersen, formatRupiah, formatTanggal } from '@/lib/config'
+import { formatPersen, formatRupiah, formatTanggal, tambahBulan, TENOR_BULAN } from '@/lib/config'
 
 export const dynamic = 'force-dynamic'
+
+// Kunci tanggal lokal (YYYY-MM-DD) agar bisa dibandingkan secara kronologis
+function keyTanggal(date: Date): string {
+  return date.toLocaleDateString('sv-SE')
+}
 
 export default async function RiwayatPage() {
   let submissions: Awaited<ReturnType<typeof prisma.submission.findMany>> = []
@@ -17,14 +22,38 @@ export default async function RiwayatPage() {
     dbError = true
   }
 
-  // Kelompokkan per tanggal (tanggal data masuk / createdAt)
-  const groups = new Map<string, typeof submissions>()
+  type Sub = (typeof submissions)[number]
+
+  // Susun semua tanggal bagi hasil: tiap investor menerima bagi hasil bulanan
+  // selama masa kontrak (tanggal mulai + 1 bulan s/d + TENOR_BULAN bulan).
+  const jadwal: { key: string; date: Date; sub: Sub }[] = []
   for (const s of submissions) {
-    // Kunci tanggal lokal (YYYY-MM-DD) agar konsisten dengan tampilan formatTanggal
-    const key = s.createdAt.toLocaleDateString('sv-SE')
-    if (!groups.has(key)) groups.set(key, [])
-    groups.get(key)!.push(s)
+    for (let bulan = 1; bulan <= TENOR_BULAN; bulan++) {
+      const date = tambahBulan(s.tanggalMulai, bulan)
+      jadwal.push({ key: keyTanggal(date), date, sub: s })
+    }
   }
+
+  const hariIni = new Date()
+  const keyHariIni = keyTanggal(hariIni)
+
+  // Bagi hasil yang jatuh tepat hari ini
+  const bagiHasilHariIni = jadwal.filter((j) => j.key === keyHariIni)
+
+  // Jika hari ini tidak ada, cari tanggal bagi hasil terdekat berikutnya
+  const adaHariIni = bagiHasilHariIni.length > 0
+  let targetKey: string | null = adaHariIni ? keyHariIni : null
+  if (!adaHariIni) {
+    const berikutnya = jadwal
+      .filter((j) => j.key > keyHariIni)
+      .sort((a, b) => a.key.localeCompare(b.key))
+    targetKey = berikutnya[0]?.key ?? null
+  }
+
+  const daftar = targetKey ? jadwal.filter((j) => j.key === targetKey) : []
+  const tanggalTarget = daftar[0]?.date ?? null
+  const totalAvalist1 = daftar.reduce((sum, j) => sum + Number(j.sub.avalist1Bulanan), 0)
+  const totalAvalist2 = daftar.reduce((sum, j) => sum + Number(j.sub.komisiBulanan), 0)
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -52,73 +81,79 @@ export default async function RiwayatPage() {
             ulang halaman beberapa saat lagi.
           </div>
         )}
-        {groups.size === 0 ? (
-          <p className="rounded-2xl bg-white p-10 text-center italic text-slate-400 shadow-sm">
-            {dbError ? 'Data tidak tersedia saat ini.' : 'Belum ada data masuk.'}
-          </p>
-        ) : (
-          [...groups.entries()].map(([key, items]) => {
-            const totalAvalist1 = items.reduce((sum, s) => sum + Number(s.avalist1Bulanan), 0)
-            const totalAvalist2 = items.reduce((sum, s) => sum + Number(s.komisiBulanan), 0)
+        <section className="rounded-2xl bg-white p-6 shadow-sm">
+          {/* Header: tanggal hari ini + status bagi hasil */}
+          <div className="mb-4 border-b border-slate-100 pb-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+              Bagi Hasil Hari Ini
+            </p>
+            <h2 className="mt-1 text-lg font-bold text-slate-900">{formatTanggal(hariIni)}</h2>
 
-            return (
-              <section key={key} className="mb-8 rounded-2xl bg-white p-6 shadow-sm">
-                {/* Header tanggal + total */}
-                <div className="mb-4 border-b border-slate-100 pb-4">
-                  <h2 className="text-lg font-bold text-slate-900">
-                    {formatTanggal(items[0].createdAt)}
-                  </h2>
-                  <div className="mt-3 space-y-3">
-                    <div className="rounded-xl bg-amber-50 p-3">
-                      <p className="text-xs text-slate-500">Total Penerimaan Avalist 1</p>
-                      <p className="mt-1 text-lg font-bold text-amber-600">
-                        {formatRupiah(totalAvalist1)}
-                      </p>
-                    </div>
-                    <div className="rounded-xl bg-amber-50 p-3">
-                      <p className="text-xs text-slate-500">Total Penerimaan Avalist 2</p>
-                      <p className="mt-1 text-lg font-bold text-amber-600">
-                        {formatRupiah(totalAvalist2)}
-                      </p>
-                    </div>
-                  </div>
+            {!adaHariIni && tanggalTarget && (
+              <div className="mt-3 rounded-xl border border-sky-100 bg-sky-50 p-3">
+                <p className="text-xs text-slate-500">Belum ada bagi hasil hari ini</p>
+                <p className="mt-1 text-sm font-semibold text-sky-700">
+                  Bagi hasil berikutnya: {formatTanggal(tanggalTarget)}
+                </p>
+              </div>
+            )}
+
+            {daftar.length > 0 && (
+              <div className="mt-3 space-y-3">
+                <div className="rounded-xl bg-amber-50 p-3">
+                  <p className="text-xs text-slate-500">Total Penerimaan Avalist 1</p>
+                  <p className="mt-1 text-lg font-bold text-amber-600">
+                    {formatRupiah(totalAvalist1)}
+                  </p>
                 </div>
+                <div className="rounded-xl bg-amber-50 p-3">
+                  <p className="text-xs text-slate-500">Total Penerimaan Avalist 2</p>
+                  <p className="mt-1 text-lg font-bold text-amber-600">
+                    {formatRupiah(totalAvalist2)}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
 
-                {/* Rincian tiap entri pada tanggal ini */}
-                <ul className="space-y-3">
-                  {items.map((s) => (
-                    <li key={s.id} className="rounded-xl border border-slate-100 p-4 text-sm">
-                      <p className="mb-2 font-semibold text-slate-800">
-                        {s.nama}{' '}
-                        <span className="font-normal text-slate-400">
-                          · {formatRupiah(Number(s.nominal))}
+          {/* Rincian tiap penerima bagi hasil pada tanggal target */}
+          {daftar.length === 0 ? (
+            <p className="py-6 text-center italic text-slate-400">
+              {dbError ? 'Data tidak tersedia saat ini.' : 'Belum ada jadwal bagi hasil.'}
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {daftar.map(({ sub: s }) => (
+                <li key={s.id} className="rounded-xl border border-slate-100 p-4 text-sm">
+                  <p className="mb-2 font-semibold text-slate-800">
+                    {s.nama}{' '}
+                    <span className="font-normal text-slate-400">
+                      · {formatRupiah(Number(s.nominal))}
+                    </span>
+                  </p>
+                  <div className="space-y-1 text-slate-600">
+                    <p>
+                      Avalist 1 ({formatPersen(s.rateAvalist1)}):{' '}
+                      <span className="font-semibold text-amber-600">
+                        {formatRupiah(Number(s.avalist1Bulanan))}
+                      </span>
+                    </p>
+                    {s.namaMarketing ? (
+                      <p>
+                        Avalist 2 — {s.namaMarketing} ({formatPersen(s.rateMarketing)}):{' '}
+                        <span className="font-semibold text-amber-600">
+                          {formatRupiah(Number(s.komisiBulanan))}
                         </span>
                       </p>
-                      <div className="space-y-1 text-slate-600">
-                        <p>
-                          Avalist 1 ({formatPersen(s.rateAvalist1)}):{' '}
-                          <span className="font-semibold text-amber-600">
-                            {formatRupiah(Number(s.avalist1Bulanan))}
-                          </span>
-                        </p>
-                        {s.namaMarketing ? (
-                          <p>
-                            Avalist 2 — {s.namaMarketing} ({formatPersen(s.rateMarketing)}):{' '}
-                            <span className="font-semibold text-amber-600">
-                              {formatRupiah(Number(s.komisiBulanan))}
-                            </span>
-                          </p>
-                        ) : (
-                          <p className="text-slate-400">Avalist 2: tidak ada</p>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )
-          })
-        )}
+                    ) : (
+                      <p className="text-slate-400">Avalist 2: tidak ada</p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </main>
     </div>
   )
