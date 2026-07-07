@@ -6,9 +6,16 @@ import { formatPersen, formatRupiah, formatTanggal } from '@/lib/config'
 export const dynamic = 'force-dynamic'
 
 export default async function RiwayatPage() {
-  const submissions = await prisma.submission.findMany({
-    orderBy: { createdAt: 'desc' },
-  })
+  let submissions: Awaited<ReturnType<typeof prisma.submission.findMany>> = []
+  let dbError = false
+  try {
+    submissions = await prisma.submission.findMany({
+      orderBy: { createdAt: 'desc' },
+    })
+  } catch (err) {
+    console.warn('Gagal memuat data riwayat:', err instanceof Error ? err.message : err)
+    dbError = true
+  }
 
   // Kelompokkan per tanggal (tanggal data masuk / createdAt)
   const groups = new Map<string, typeof submissions>()
@@ -39,9 +46,15 @@ export default async function RiwayatPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-10">
+        {dbError && (
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Gagal terhubung ke database. Data tidak dapat ditampilkan untuk sementara. Coba muat
+            ulang halaman beberapa saat lagi.
+          </div>
+        )}
         {groups.size === 0 ? (
           <p className="rounded-2xl bg-white p-10 text-center italic text-slate-400 shadow-sm">
-            Belum ada data masuk.
+            {dbError ? 'Data tidak tersedia saat ini.' : 'Belum ada data masuk.'}
           </p>
         ) : (
           [...groups.entries()].map(([key, items]) => {

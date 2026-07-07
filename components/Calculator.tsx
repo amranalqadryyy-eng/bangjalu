@@ -280,7 +280,7 @@ export default function Calculator() {
             </div>
 
             {/* Avalist */}
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="space-y-4 text-sm">
               <div className="rounded-xl bg-slate-800 p-4">
                 <p className="text-slate-400">Avalist 1 ({formatPersen(hasil.rateAvalist1)})</p>
                 <p className="mt-1 text-lg font-bold text-amber-400">
@@ -319,10 +319,6 @@ export default function Calculator() {
               <div className="rounded-xl bg-slate-800 p-4">
                 <p className="text-slate-400">Modal Investasi</p>
                 <p className="mt-1 font-semibold">{formatRupiah(hasil.nominal)}</p>
-              </div>
-              <div className="rounded-xl bg-slate-800 p-4">
-                <p className="text-slate-400">Mulai Kontrak</p>
-                <p className="mt-1 font-semibold">{formatTanggal(tglMulai)}</p>
               </div>
               <div className="rounded-xl bg-slate-800 p-4">
                 <p className="text-slate-400">Bagi Hasil Pertama</p>

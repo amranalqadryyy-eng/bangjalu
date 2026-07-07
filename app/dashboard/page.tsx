@@ -14,9 +14,16 @@ import {
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-  const submissions = await prisma.submission.findMany({
-    orderBy: { createdAt: 'desc' },
-  })
+  let submissions: Awaited<ReturnType<typeof prisma.submission.findMany>> = []
+  let dbError = false
+  try {
+    submissions = await prisma.submission.findMany({
+      orderBy: { createdAt: 'desc' },
+    })
+  } catch (err) {
+    console.warn('Gagal memuat data dashboard:', err instanceof Error ? err.message : err)
+    dbError = true
+  }
 
   const totalNominal = submissions.reduce((sum, s) => sum + Number(s.nominal), 0)
   const totalHasilBulanan = submissions.reduce((sum, s) => sum + Number(s.hasilBulanan), 0)
@@ -41,6 +48,13 @@ export default async function DashboardPage() {
       </header>
 
       <main className="mx-auto max-w-7xl px-6 py-10">
+        {dbError && (
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Gagal terhubung ke database. Data tidak dapat ditampilkan untuk sementara. Coba muat
+            ulang halaman beberapa saat lagi.
+          </div>
+        )}
+
         {/* Ringkasan */}
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="rounded-2xl bg-white p-6 shadow-sm">
