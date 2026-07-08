@@ -116,8 +116,7 @@ export default function Calculator() {
   }
 
   // Tanggal-tanggal turunan
-  const tglHariIni = new Date()
-  const tglMulai = new Date(tanggal) // tanggal transfer dana
+  const tglMulai = new Date(tanggal) // tanggal transfer dana (= "Tanggal Mulai Kontrak")
   // Dana baru diakui sebagai investasi HARI_BERLAKU hari setelah transfer
   const terhitungInvestasi = tambahHari(tglMulai, HARI_BERLAKU)
   // Bagi hasil pertama = 1 bulan setelah dana diakui, lalu berulang tiap bulan sepanjang tenor
@@ -313,7 +312,7 @@ export default function Calculator() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="rounded-xl bg-slate-800 p-4">
                 <p className="text-slate-400">Hari ini</p>
-                <p className="mt-1 font-semibold">{formatTanggal(tglHariIni)}</p>
+                <p className="mt-1 font-semibold">{formatTanggal(tglMulai)}</p>
               </div>
               <div className="rounded-xl bg-slate-800 p-4">
                 <p className="text-slate-400">Terhitung investasi</p>
