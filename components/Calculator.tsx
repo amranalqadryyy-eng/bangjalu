@@ -9,10 +9,10 @@ import {
   formatRupiah,
   formatTanggal,
   HARI_BERLAKU,
+  jadwalBagiHasil,
   MIN_INVESTASI,
   RATE_BULANAN,
-  tambahBulan,
-  tambahHari,
+  tanggalDiakui,
   TENOR_BULAN,
 } from '@/lib/config'
 
@@ -114,12 +114,13 @@ export default function Calculator() {
     }
   }
 
-  // Tanggal-tanggal turunan
-  const tglHariIni = new Date()
-  const tglSepuluh = tambahHari(tglHariIni, HARI_BERLAKU)
-  const tglMulai = new Date(tanggal)
-  const bagiHasilPertama = tambahBulan(tglMulai, 1)
-  const bagiHasilTerakhir = tambahBulan(tglMulai, TENOR_BULAN)
+  // Alur: dana ditransfer (input) → diakui sbg investasi 10 hari kemudian →
+  // bagi hasil pertama 1 bulan setelah diakui, berulang tiap bulan.
+  const tglTransfer = new Date(tanggal)
+  const tglDiakui = tanggalDiakui(tglTransfer)
+  const jadwal = jadwalBagiHasil(tglTransfer)
+  const bagiHasilPertama = jadwal[0]
+  const bagiHasilTerakhir = jadwal[jadwal.length - 1]
 
   return (
     <div className="mx-auto grid max-w-5xl overflow-hidden rounded-3xl bg-white shadow-xl md:grid-cols-2">
@@ -280,7 +281,7 @@ export default function Calculator() {
             </div>
 
             {/* Avalist */}
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="space-y-4 text-sm">
               <div className="rounded-xl bg-slate-800 p-4">
                 <p className="text-slate-400">Avalist 1 ({formatPersen(hasil.rateAvalist1)})</p>
                 <p className="mt-1 text-lg font-bold text-amber-400">
@@ -310,19 +311,11 @@ export default function Calculator() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="rounded-xl bg-slate-800 p-4">
                 <p className="text-slate-400">Tanggal Hari Ini</p>
-                <p className="mt-1 font-semibold">{formatTanggal(tglHariIni)}</p>
+                <p className="mt-1 font-semibold">{formatTanggal(tglTransfer)}</p>
               </div>
               <div className="rounded-xl bg-slate-800 p-4">
                 <p className="text-slate-400">Berlaku {HARI_BERLAKU} Hari (s/d)</p>
-                <p className="mt-1 font-semibold">{formatTanggal(tglSepuluh)}</p>
-              </div>
-              <div className="rounded-xl bg-slate-800 p-4">
-                <p className="text-slate-400">Modal Investasi</p>
-                <p className="mt-1 font-semibold">{formatRupiah(hasil.nominal)}</p>
-              </div>
-              <div className="rounded-xl bg-slate-800 p-4">
-                <p className="text-slate-400">Mulai Kontrak</p>
-                <p className="mt-1 font-semibold">{formatTanggal(tglMulai)}</p>
+                <p className="mt-1 font-semibold">{formatTanggal(tglDiakui)}</p>
               </div>
               <div className="rounded-xl bg-slate-800 p-4">
                 <p className="text-slate-400">Bagi Hasil Pertama</p>

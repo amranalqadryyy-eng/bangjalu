@@ -1,14 +1,13 @@
 import Link from 'next/link'
 import AutoRefresh from '@/components/AutoRefresh'
+import DeleteButton from '@/components/DeleteButton'
 import { prisma } from '@/lib/prisma'
 import {
   formatPersen,
   formatRupiah,
   formatTanggal,
-  HARI_BERLAKU,
-  tambahBulan,
-  tambahHari,
-  TENOR_BULAN,
+  jadwalBagiHasil,
+  tanggalDiakui,
 } from '@/lib/config'
 
 export const dynamic = 'force-dynamic'
@@ -32,6 +31,9 @@ export default async function DashboardPage() {
           <nav className="flex gap-5 text-sm font-medium text-sky-600">
             <Link href="/riwayat" className="hover:underline">
               Riwayat Harian
+            </Link>
+            <Link href="/avalist" className="hover:underline">
+              Rekap Avalist 2
             </Link>
             <Link href="/" className="hover:underline">
               Beranda
@@ -67,32 +69,35 @@ export default async function DashboardPage() {
                 <th className="px-4 py-4 font-semibold">Tgl Hari Ini</th>
                 <th className="px-4 py-4 font-semibold">Nama Investor</th>
                 <th className="px-4 py-4 font-semibold">Nominal</th>
-                <th className="px-4 py-4 font-semibold">Berlaku {HARI_BERLAKU} Hari</th>
                 <th className="px-4 py-4 font-semibold">Mulai Kontrak</th>
+                <th className="px-4 py-4 font-semibold">Berlaku Akad</th>
                 <th className="px-4 py-4 font-semibold">Bagi Hasil Investor</th>
                 <th className="px-4 py-4 font-semibold">Avalist 1</th>
                 <th className="px-4 py-4 font-semibold">Avalist 2</th>
                 <th className="px-4 py-4 font-semibold">B.Hasil Pertama</th>
                 <th className="px-4 py-4 font-semibold">B.Hasil Terakhir</th>
+                <th className="px-4 py-4 font-semibold">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {submissions.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-5 py-12 text-center italic text-slate-400">
+                  <td colSpan={11} className="px-5 py-12 text-center italic text-slate-400">
                     Belum ada data simulasi masuk.
                   </td>
                 </tr>
               ) : (
-                submissions.map((s) => (
+                submissions.map((s) => {
+                  const jadwal = jadwalBagiHasil(s.tanggalMulai)
+                  return (
                   <tr key={s.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-4 text-slate-500">{formatTanggal(s.createdAt)}</td>
+                    <td className="px-4 py-4 text-slate-500">{formatTanggal(s.tanggalMulai)}</td>
                     <td className="px-4 py-4 font-semibold text-slate-900">{s.nama}</td>
                     <td className="px-4 py-4">{formatRupiah(Number(s.nominal))}</td>
-                    <td className="px-4 py-4 text-slate-500">
-                      {formatTanggal(tambahHari(s.createdAt, HARI_BERLAKU))}
-                    </td>
                     <td className="px-4 py-4">{formatTanggal(s.tanggalMulai)}</td>
+                    <td className="px-4 py-4 text-slate-500">
+                      {formatTanggal(tanggalDiakui(s.tanggalMulai))}
+                    </td>
                     <td className="px-4 py-4 font-semibold text-emerald-600">
                       {formatRupiah(Number(s.hasilBulanan))}
                     </td>
@@ -122,13 +127,17 @@ export default async function DashboardPage() {
                       )}
                     </td>
                     <td className="px-4 py-4 text-slate-600">
-                      {formatTanggal(tambahBulan(s.tanggalMulai, 1))}
+                      {formatTanggal(jadwal[0])}
                     </td>
                     <td className="px-4 py-4 text-slate-600">
-                      {formatTanggal(tambahBulan(s.tanggalMulai, TENOR_BULAN))}
+                      {formatTanggal(jadwal[jadwal.length - 1])}
+                    </td>
+                    <td className="px-4 py-4">
+                      <DeleteButton id={s.id} nama={s.nama} />
                     </td>
                   </tr>
-                ))
+                  )
+                })
               )}
             </tbody>
           </table>
