@@ -1,0 +1,16 @@
+# Konfigurasi deploy Netlify.
+# `npm run build` sudah menjalankan `prisma generate && next build`,
+# jadi Prisma Client di-generate saat build. DATABASE_URL WAJIB di-set
+# di Netlify (Site settings -> Environment variables) menggunakan connection
+# string Supabase "Transaction pooler" (port 6543) — lihat .env.example.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Runtime resmi Next.js untuk Netlify (SSR, route dinamis, dsb).
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
