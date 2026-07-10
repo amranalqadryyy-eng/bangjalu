@@ -49,6 +49,26 @@ export function tambahBulan(date: Date, bulan: number): Date {
   return d
 }
 
+// Tanggal dana diakui sebagai investasi: HARI_BERLAKU (10) hari setelah
+// tanggal transfer dana.
+export function tanggalDiakui(tglTransfer: Date): Date {
+  return tambahHari(tglTransfer, HARI_BERLAKU)
+}
+
+// Jadwal tanggal bagi hasil bulanan. Dimulai 1 bulan setelah tanggal diakui,
+// berulang tiap bulan pada tanggal yang sama. Pembayaran terakhir jatuh
+// TENOR_BULAN (12) bulan setelah pembayaran pertama — sesuai alur:
+// transfer 7 Juli → diakui 17 Juli → pertama 17 Agustus → terakhir 17 Agustus
+// tahun berikutnya.
+export function jadwalBagiHasil(tglTransfer: Date): Date[] {
+  const diakui = tanggalDiakui(tglTransfer)
+  const dates: Date[] = []
+  for (let i = 1; i <= TENOR_BULAN + 1; i++) {
+    dates.push(tambahBulan(diakui, i))
+  }
+  return dates
+}
+
 export function formatPersen(rate: number): string {
   return `${(rate * 100).toLocaleString('id-ID')}%`
 }

@@ -9,10 +9,10 @@ import {
   formatRupiah,
   formatTanggal,
   HARI_BERLAKU,
+  jadwalBagiHasil,
   MIN_INVESTASI,
   RATE_BULANAN,
-  tambahBulan,
-  tambahHari,
+  tanggalDiakui,
   TENOR_BULAN,
 } from '@/lib/config'
 
@@ -37,8 +37,7 @@ export default function Calculator() {
   const [namaMarketing, setNamaMarketing] = useState('')
   const [rateMarketing, setRateMarketing] = useState<number>(0) // 0 = tidak ada Avalist 2
   const [nominalStr, setNominalStr] = useState('10.000.000')
-  // Tanggal lokal (YYYY-MM-DD) — hindari toISOString() yang pakai UTC (bisa mundur 1 hari di WIB)
-  const [tanggal, setTanggal] = useState(() => new Date().toLocaleDateString('sv-SE'))
+  const [tanggal, setTanggal] = useState(() => new Date().toISOString().slice(0, 10))
   const [hasil, setHasil] = useState<Hasil | null>(null)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -115,13 +114,13 @@ export default function Calculator() {
     }
   }
 
-  // Tanggal-tanggal turunan
-  const tglMulai = new Date(tanggal) // tanggal transfer dana (= "Tanggal Mulai Kontrak")
-  // Dana baru diakui sebagai investasi HARI_BERLAKU hari setelah transfer
-  const terhitungInvestasi = tambahHari(tglMulai, HARI_BERLAKU)
-  // Bagi hasil pertama = 1 bulan setelah dana diakui, lalu berulang tiap bulan sepanjang tenor
-  const bagiHasilPertama = tambahBulan(terhitungInvestasi, 1)
-  const bagiHasilTerakhir = tambahBulan(bagiHasilPertama, TENOR_BULAN)
+  // Alur: dana ditransfer (input) → diakui sbg investasi 10 hari kemudian →
+  // bagi hasil pertama 1 bulan setelah diakui, berulang tiap bulan.
+  const tglTransfer = new Date(tanggal)
+  const tglDiakui = tanggalDiakui(tglTransfer)
+  const jadwal = jadwalBagiHasil(tglTransfer)
+  const bagiHasilPertama = jadwal[0]
+  const bagiHasilTerakhir = jadwal[jadwal.length - 1]
 
   return (
     <div className="mx-auto grid max-w-5xl overflow-hidden rounded-3xl bg-white shadow-xl md:grid-cols-2">
@@ -311,12 +310,12 @@ export default function Calculator() {
             {/* Tanggal-tanggal */}
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="rounded-xl bg-slate-800 p-4">
-                <p className="text-slate-400">Hari ini</p>
-                <p className="mt-1 font-semibold">{formatTanggal(tglMulai)}</p>
+                <p className="text-slate-400">Tanggal Hari Ini</p>
+                <p className="mt-1 font-semibold">{formatTanggal(tglTransfer)}</p>
               </div>
               <div className="rounded-xl bg-slate-800 p-4">
-                <p className="text-slate-400">Terhitung investasi</p>
-                <p className="mt-1 font-semibold">{formatTanggal(terhitungInvestasi)}</p>
+                <p className="text-slate-400">Berlaku {HARI_BERLAKU} Hari (s/d)</p>
+                <p className="mt-1 font-semibold">{formatTanggal(tglDiakui)}</p>
               </div>
               <div className="rounded-xl bg-slate-800 p-4">
                 <p className="text-slate-400">Bagi Hasil Pertama</p>

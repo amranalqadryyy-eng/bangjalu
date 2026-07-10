@@ -1,59 +1,44 @@
 import Link from 'next/link'
 import AutoRefresh from '@/components/AutoRefresh'
 import { prisma } from '@/lib/prisma'
-import { formatPersen, formatRupiah, formatTanggal, tambahBulan, TENOR_BULAN } from '@/lib/config'
+import { formatPersen, formatRupiah, formatTanggal, jadwalBagiHasil } from '@/lib/config'
 
 export const dynamic = 'force-dynamic'
 
-// Kunci tanggal lokal (YYYY-MM-DD) agar bisa dibandingkan secara kronologis
-function keyTanggal(date: Date): string {
-  return date.toLocaleDateString('sv-SE')
+// Kunci tanggal lokal (YYYY-MM-DD) — bisa dibandingkan langsung sebagai string
+function dateKey(d: Date): string {
+  return d.toLocaleDateString('sv-SE')
 }
 
 export default async function RiwayatPage() {
-  let submissions: Awaited<ReturnType<typeof prisma.submission.findMany>> = []
-  let dbError = false
-  try {
-    submissions = await prisma.submission.findMany({
-      orderBy: { createdAt: 'desc' },
-    })
-  } catch (err) {
-    console.warn('Gagal memuat data riwayat:', err instanceof Error ? err.message : err)
-    dbError = true
-  }
+  const submissions = await prisma.submission.findMany({
+    orderBy: { createdAt: 'desc' },
+  })
 
-  type Sub = (typeof submissions)[number]
+  const today = new Date()
+  const todayKey = dateKey(today)
 
-  // Susun semua tanggal bagi hasil: tiap investor menerima bagi hasil bulanan
-  // selama masa kontrak (tanggal mulai + 1 bulan s/d + TENOR_BULAN bulan).
-  const jadwal: { key: string; date: Date; sub: Sub }[] = []
+  // Cari submission yang bagi hasilnya jatuh tempo HARI INI,
+  // sekaligus tanggal bagi hasil terdekat berikutnya (untuk kondisi kosong).
+  const jatuhTempoHariIni: typeof submissions = []
+  let nextKey: string | null = null
+  let nextDate: Date | null = null
+
   for (const s of submissions) {
-    for (let bulan = 1; bulan <= TENOR_BULAN; bulan++) {
-      const date = tambahBulan(s.tanggalMulai, bulan)
-      jadwal.push({ key: keyTanggal(date), date, sub: s })
+    // Bagi hasil bulanan dihitung dari tanggal diakui (transfer + 10 hari).
+    for (const tgl of jadwalBagiHasil(s.tanggalMulai)) {
+      const key = dateKey(tgl)
+      if (key === todayKey) {
+        jatuhTempoHariIni.push(s)
+      } else if (key > todayKey && (nextKey === null || key < nextKey)) {
+        nextKey = key
+        nextDate = tgl
+      }
     }
   }
 
-  const hariIni = new Date()
-  const keyHariIni = keyTanggal(hariIni)
-
-  // Bagi hasil yang jatuh tepat hari ini
-  const bagiHasilHariIni = jadwal.filter((j) => j.key === keyHariIni)
-
-  // Jika hari ini tidak ada, cari tanggal bagi hasil terdekat berikutnya
-  const adaHariIni = bagiHasilHariIni.length > 0
-  let targetKey: string | null = adaHariIni ? keyHariIni : null
-  if (!adaHariIni) {
-    const berikutnya = jadwal
-      .filter((j) => j.key > keyHariIni)
-      .sort((a, b) => a.key.localeCompare(b.key))
-    targetKey = berikutnya[0]?.key ?? null
-  }
-
-  const daftar = targetKey ? jadwal.filter((j) => j.key === targetKey) : []
-  const tanggalTarget = daftar[0]?.date ?? null
-  const totalAvalist1 = daftar.reduce((sum, j) => sum + Number(j.sub.avalist1Bulanan), 0)
-  const totalAvalist2 = daftar.reduce((sum, j) => sum + Number(j.sub.komisiBulanan), 0)
+  const totalAvalist1 = jatuhTempoHariIni.reduce((sum, s) => sum + Number(s.avalist1Bulanan), 0)
+  const totalAvalist2 = jatuhTempoHariIni.reduce((sum, s) => sum + Number(s.komisiBulanan), 0)
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -67,6 +52,9 @@ export default async function RiwayatPage() {
             <Link href="/dashboard" className="hover:underline">
               Tabel Data
             </Link>
+            <Link href="/avalist" className="hover:underline">
+              Rekap Avalist 2
+            </Link>
             <Link href="/" className="hover:underline">
               Beranda
             </Link>
@@ -75,30 +63,13 @@ export default async function RiwayatPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-10">
-        {dbError && (
-          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-            Gagal terhubung ke database. Data tidak dapat ditampilkan untuk sementara. Coba muat
-            ulang halaman beberapa saat lagi.
-          </div>
-        )}
-        <section className="rounded-2xl bg-white p-6 shadow-sm">
-          {/* Header: tanggal hari ini + status bagi hasil */}
+        <section className="mb-8 rounded-2xl bg-white p-6 shadow-sm">
+          {/* Header tanggal bagi hasil */}
           <div className="mb-4 border-b border-slate-100 pb-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Bagi Hasil Hari Ini
-            </p>
-            <h2 className="mt-1 text-lg font-bold text-slate-900">{formatTanggal(hariIni)}</h2>
+            <p className="text-xs text-slate-400">Tanggal Bagi Hasil</p>
+            <h2 className="text-lg font-bold text-slate-900">{formatTanggal(today)}</h2>
 
-            {!adaHariIni && tanggalTarget && (
-              <div className="mt-3 rounded-xl border border-sky-100 bg-sky-50 p-3">
-                <p className="text-xs text-slate-500">Belum ada bagi hasil hari ini</p>
-                <p className="mt-1 text-sm font-semibold text-sky-700">
-                  Bagi hasil berikutnya: {formatTanggal(tanggalTarget)}
-                </p>
-              </div>
-            )}
-
-            {daftar.length > 0 && (
+            {jatuhTempoHariIni.length > 0 && (
               <div className="mt-3 space-y-3">
                 <div className="rounded-xl bg-amber-50 p-3">
                   <p className="text-xs text-slate-500">Total Penerimaan Avalist 1</p>
@@ -116,14 +87,19 @@ export default async function RiwayatPage() {
             )}
           </div>
 
-          {/* Rincian tiap penerima bagi hasil pada tanggal target */}
-          {daftar.length === 0 ? (
-            <p className="py-6 text-center italic text-slate-400">
-              {dbError ? 'Data tidak tersedia saat ini.' : 'Belum ada jadwal bagi hasil.'}
-            </p>
+          {jatuhTempoHariIni.length === 0 ? (
+            <div className="rounded-xl bg-slate-50 p-6 text-center">
+              <p className="text-slate-500">Tidak ada bagi hasil hari ini.</p>
+              {nextDate && (
+                <p className="mt-2 text-sm text-slate-600">
+                  Next bagi hasil:{' '}
+                  <span className="font-semibold text-emerald-600">{formatTanggal(nextDate)}</span>
+                </p>
+              )}
+            </div>
           ) : (
             <ul className="space-y-3">
-              {daftar.map(({ sub: s }) => (
+              {jatuhTempoHariIni.map((s) => (
                 <li key={s.id} className="rounded-xl border border-slate-100 p-4 text-sm">
                   <p className="mb-2 font-semibold text-slate-800">
                     {s.nama}{' '}
